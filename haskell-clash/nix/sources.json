@@ -1,0 +1,50 @@
+{
+    "clash-compiler": {
+        "branch": "master",
+        "description": "Haskell to VHDL/Verilog/SystemVerilog compiler",
+        "homepage": "https://clash-lang.org/",
+        "owner": "clash-lang",
+        "repo": "clash-compiler",
+        "rev": "70b7b2ecb4647163d807a30072cc1faf922a3710",
+        "sha256": "0mg8gd9yispvvi7sk62rnqmp1x301564x88ivgk50mqz85247a8f",
+        "type": "tarball",
+        "url": "https://github.com/clash-lang/clash-compiler/archive/70b7b2ecb4647163d807a30072cc1faf922a3710.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "haskellNix": {
+        "branch": "master",
+        "description": "Alternative Haskell Infrastructure for Nixpkgs",
+        "homepage": "https://input-output-hk.github.io/haskell.nix",
+        "owner": "input-output-hk",
+        "repo": "haskell.nix",
+        "rev": "b0f217b5954e445d90ce4ac70cf82a62093052cd",
+        "sha256": "1gsl6c3bbsglrq5q86vnlyhi4k0l1nxm399h0kli8zzs76lfbkff",
+        "type": "tarball",
+        "url": "https://github.com/input-output-hk/haskell.nix/archive/b0f217b5954e445d90ce4ac70cf82a62093052cd.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "niv": {
+        "branch": "master",
+        "description": "Easy dependency management for Nix projects",
+        "homepage": "https://github.com/nmattia/niv",
+        "owner": "nmattia",
+        "repo": "niv",
+        "rev": "65a61b147f307d24bfd0a5cd56ce7d7b7cc61d2e",
+        "sha256": "17mirpsx5wyw262fpsd6n6m47jcgw8k2bwcp1iwdnrlzy4dhcgqh",
+        "type": "tarball",
+        "url": "https://github.com/nmattia/niv/archive/65a61b147f307d24bfd0a5cd56ce7d7b7cc61d2e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "nixpkgs": {
+        "branch": "release-20.03",
+        "description": "Nix Packages collection",
+        "homepage": "",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "eb73405ecceb1dc505b7cbbd234f8f94165e2696",
+        "sha256": "06k21wbyhhvq2f1xczszh3c2934p0m02by3l2ixvd6nkwrqklax7",
+        "type": "tarball",
+        "url": "https://github.com/NixOS/nixpkgs/archive/eb73405ecceb1dc505b7cbbd234f8f94165e2696.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
