@@ -19,7 +19,18 @@
 
         requirements = ''
           plumbum
+          dhall
         '';
+
+        source_preferences = {
+          _default = "nixpkgs,wheel,sdist";
+          dhall = "wheel";
+        };
+
+        env = machNix.mkPython {
+          inherit requirements;
+          packagesExtra = [ pkgs.openssl ];
+        };
 
         app = machNix.buildPythonApplication {
           pname = packageName;
@@ -31,11 +42,14 @@
       in {
         packages.${packageName} = app;
 
+        devShell = pkgs.mkShell {
+          buildInputs = [ env ];
+          shellHook = ''
+            export LD_LIBRARY_PATH=${pkgs.openssl.out}/lib
+          '';
+        };
         defaultPackage = self.packages.${system}.${packageName};
         apps.${system}.default = app;
 
-        devShell = machNix.mkPythonShell {
-          inherit requirements;
-        };
       });
 }
