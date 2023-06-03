@@ -8,95 +8,79 @@
   }:
   let
     system = "x86_64-linux";
+    origPkgs = import nixpkgs { inherit system; };
 
-    pkgs = let
-      origPkgs = import nixpkgs { inherit system; };
+    oldTools = {
+      gcc830 = (import (builtins.fetchGit {
+         name = "gcc_8_3_0";
+         url = "https://github.com/NixOS/nixpkgs/";
+         ref = "refs/heads/nixpkgs-unstable";
+         rev = "a9eb3eed170fa916e0a8364e5227ee661af76fde";
+      }) { inherit system; }).gcc-unwrapped;
+      glibc218 = (import (builtins.fetchGit {
+         name = "glibc_2_18";
+         url = "https://github.com/NixOS/nixpkgs/";
+         ref = "refs/heads/nixpkgs-unstable";
+         rev = "ab6453c483e406b07c63503bca5038838c187ecf";
+      }) { inherit system; }).glibc;
+    };
 
-      getCustomGccStdenv = customGccNixpkgs: origStdenv: { pkgs, ... }:
-        with pkgs; let
-          gcc_custom = customGccNixpkgs.gcc-unwrapped;
-          compilerWrapped = wrapCCWith {
-            cc = gcc_custom;
-            bintools = wrapBintoolsWith {
-              bintools = binutils-unwrapped;
-              libc = glibc;
+    getStdenvs = origPkgs:
+      with oldTools;
+      let
+        getCustomGccStdenv = customGcc: customGlibc: origStdenv: { pkgs, ... }:
+          with pkgs; let
+            compilerWrapped = wrapCCWith {
+              cc = customGcc;
+              bintools = wrapBintoolsWith {
+                bintools = binutils-unwrapped;
+                libc = customGlibc;
+              };
             };
-          };
-        in
-          overrideCC origStdenv compilerWrapped;
+          in
+            overrideCC origStdenv compilerWrapped;
+      in {
+        gcc830Glibc218 = getCustomGccStdenv
+          gcc830 glibc218 origPkgs.stdenv origPkgs;
+        gcc830Glibc237 = getCustomGccStdenv
+          gcc830 origPkgs.glibc origPkgs.stdenv origPkgs;
+      };
 
-      getGcc830Stdenv =
-        let
-          gcc830Nixpkgs = import (builtins.fetchGit {
-             name = "gcc_8_3_0";
-             url = "https://github.com/NixOS/nixpkgs/";
-             ref = "refs/heads/nixpkgs-unstable";
-             rev = "a9eb3eed170fa916e0a8364e5227ee661af76fde";
-          }) { inherit system; };
-        in getCustomGccStdenv gcc830Nixpkgs origPkgs.gcc8Stdenv;
-
-      # getGcc830Stdenv = { pkgs, ... }:
-      #   with pkgs;
-      #   let
-      #     gcc_8_3_0 = (import (builtins.fetchGit {
-      #        name = "gcc_8_3_0";
-      #        url = "https://github.com/NixOS/nixpkgs/";
-      #        ref = "refs/heads/nixpkgs-unstable";
-      #        rev = "a9eb3eed170fa916e0a8364e5227ee661af76fde";
-      #     }) { inherit system; }).gcc-unwrapped;
-
-      #     # glibcPkgs = import (builtins.fetchTarball {
-      #     #   url = "https://github.com/NixOS/nixpkgs/archive/a9eb3eed170fa916e0a8364e5227ee661af76fde.tar.gz";
-      #     #   sha256 = "0zfkymyg0l5ihnyj1nlm14fs7z109ah6hbid7l0i3f0g80s1pbq2";
-      #     # }) { system = system; };
-      #     # glibc_2_18 = glibcPkgs.glibc;
-      #     # glibc = pkgs.glibc.overrideAttrs (attrs:
-      #     #   let old-glibc = (import glibcPkgs {inherit system;}).glibc;
-      #     #   in {
-      #     #     inherit (old-glibc) name src postPatch patches;
-      #     #   }
-      #     # );
-      #     compilerUnwrapped = gcc_8_3_0;
-      #     compilerWrapped = wrapCCWith {
-      #       cc = compilerUnwrapped;
-      #       bintools = wrapBintoolsWith {
-      #         bintools = binutils-unwrapped;
-      #         # libc = glibc;
-      #       };
-      #     };
-      #   in
-      #     (overrideCC gcc8Stdenv compilerWrapped);
-      overlays = [
-        (self: super: {
-          gcc830Stdenv = getGcc830Stdenv super;
-          # gcc920Stdenv = getGcc920Stdenv super;
-        } )
+    getOverlays = origPkgs:
+      let
+        stdenvOverlays = getStdenvs origPkgs;
+      in [
+        (self: super: getStdenvs origPkgs )
       ];
-    in
-      origPkgs.appendOverlays overlays;
 
-    mainPkg830 = pkgs.callPackage ./main.nix { customStdenv = pkgs.gcc830Stdenv; };
-    # mainPkg920 = pkgs.callPackage ./main.nix { customStdenv = pkgs.gcc920Stdenv; };
-    mainPkg = pkgs.callPackage ./main.nix { customStdenv = pkgs.stdenv; };
+    getPackages = origPkgs:
+      let
+        envs = getStdenvs origPkgs;
+        pkgs = origPkgs.appendOverlays (getOverlays origPkgs);
+        envToPkg = envName: env:
+          let pkgName = "pkgGcc${( pkgs.lib.strings.removePrefix "gcc" envName )}";
+          in { name = pkgName; value = pkgs.callPackage ./main.nix { stdenv = env; }; };
+      in
+        origPkgs.lib.attrsets.mapAttrs' envToPkg envs;
 
-    getShowGlibcReqsApp = pkg:
-      let prog = pkgs.writeShellScriptBin
-        "show_glibc_reqs"
-        ''
-          ${pkgs.bintools}/bin/readelf --dyn-syms ${pkg}/bin/main | grep '@GLIBC'
-        '';
-       in {
-         type = "app";
-         program = "${prog}/bin/show_glibc_reqs";
-       };
+    getShowGlibcApps = pkgs:
+      let
+        packages = getPackages pkgs;
+        pkgToApp = pkgName: pkg:
+          let
+            prog = origPkgs.writeShellScriptBin
+              "show_glibc_reqs"
+              ''
+                ${origPkgs.bintools}/bin/readelf --dyn-syms ${pkg}/bin/main | grep '@GLIBC'
+              '';
+            appName = "show_glibc_reqs_${(pkgs.lib.strings.removePrefix "pkg" pkgName)}";
+            app =
+              { type = "app";
+              program = "${prog}/bin/show_glibc_reqs"; };
+          in { name = appName; value = app; };
+      in pkgs.lib.attrsets.mapAttrs' pkgToApp packages;
   in {
-    packages.${system} = {
-      main = mainPkg;
-      main830 = mainPkg830;
-    };
-    apps.${system} = {
-      show_glibc_reqs_830 = getShowGlibcReqsApp mainPkg830;
-      show_glibc_reqs_std = getShowGlibcReqsApp mainPkg;
-    };
+    packages.${system} = getPackages origPkgs;
+    apps.${system} = getShowGlibcApps origPkgs;
   };
 }

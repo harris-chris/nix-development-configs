@@ -1,12 +1,12 @@
-{ customStdenv
+{ stdenv
   , lib
 }:
-  customStdenv.mkDerivation rec {
+  stdenv.mkDerivation rec {
     name = "main";
     src = ./src/.;
 
     buildPhase = ''
-      g++ -o main main.cpp
+      gcc -o main main.c
     '';
 
     installPhase = ''
