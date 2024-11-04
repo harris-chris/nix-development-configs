@@ -1,2 +1,0 @@
-Manifest {manifestHash = (-1555348365264137906,Nothing), successFlags = (20,20,False), portInNames = ["clk","rst","en","\\c$arg_0\\","\\c$arg_1\\"], portInTypes = ["topentity.mac_types.clk_system","topentity.mac_types.rst_system","boolean","signed(63 downto 0)","signed(63 downto 0)"], portOutNames = ["result"], portOutTypes = ["signed(63 downto 0)"], componentNames = ["topentity"]}
-

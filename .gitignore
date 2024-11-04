@@ -1,2 +1,5 @@
 result
 result-man
+haskell-clash/dist-newstyle/
+haskell-clash/**/*.o
+haskell-clash/**/*.hi
